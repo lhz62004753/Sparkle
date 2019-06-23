@@ -82,6 +82,14 @@ int main(int argc, const char *argv[])
             }
         }
         
+        NSString * relaunch = @"0";
+        if (argc >= 5) {
+            NSString *tmpRelaunch = [[NSString alloc] initWithUTF8String:argv[4]];
+            if (tmpRelaunch != nil) {
+                relaunch = tmpRelaunch;
+            }
+        }
+        
         // This tool should be executed as root, so we should not try to authorize
         SUFileManager *fileManager = [SUFileManager defaultManager];
         
@@ -149,6 +157,24 @@ int main(int argc, const char *argv[])
             }
         } else {
             exit(SUInvalidCommandFailure);
+        }
+        
+        if ( [relaunch isEqualToString:@"1"] && [destinationURL.absoluteString hasSuffix:@".app"] ) {
+            NSString *installerPath = @"/usr/bin/open";
+            NSString * _Nonnull destinationPath = destinationURL.absoluteString?destinationURL.absoluteString:@"";
+            NSTask *task = [[NSTask alloc] init];
+            task.launchPath = installerPath;
+            task.arguments = @[destinationPath];
+            
+            @try {
+                [task launch];
+                [task waitUntilExit];
+                if (task.terminationStatus != EXIT_SUCCESS) {
+                    exit(SUPackageFailureStatusCode);
+                }
+            } @catch (NSException *) {
+                exit(SUPackageRaisedExceptionFailure);
+            }
         }
         
         return EXIT_SUCCESS;
